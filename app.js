@@ -1,7 +1,12 @@
 // Required packages
 import express from "express";
 import bodyParser from "body-parser";
+import swaggerUi from "swagger-ui-express";
+import swaggerJSDoc from "swagger-jsdoc";
 import fs from "fs";
+
+import webhooksRouter from "./routes/webhookRouter.js";
+import eventsRouter from "./routes/eventRouter.js";
 
 const PORT = process.env.PORT || 8080;
 
@@ -11,70 +16,33 @@ const app = express();
 // Use body-parser to parse incoming requests
 app.use(bodyParser.json());
 
+// Swagger documentation
+const swaggerDefinition = {
+  openapi: "3.0.0",
+  info: {
+    title: "Users API",
+    version: "1.0.0",
+    description: "A simple Express Users API",
+  },
+};
+
+const swaggerOptions = {
+  swaggerDefinition,
+  apis: ["./routes/*.js"],
+  explorer: true,
+};
+
+app.use(
+  "/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerJSDoc(swaggerOptions))
+);
+
+app.use("/webhooks", webhooksRouter);
+app.use("/events", eventsRouter);
+
 const file = fetchFile("./webhooks.json");
-// Set up a variable to store registered webhooks
 let webhooks = JSON.parse(file);
-
-// Route to register a webhook
-app.post("/register", (req, res) => {
-  const {eventType, endpoint} = req.body;
-  webhooks.push({eventType, endpoint});
-  saveWebhooks();
-  res.send("Webhook registered successfully");
-});
-
-// Route to unregister a webhook
-app.post("/unregister", (req, res) => {
-  const {endpoint} = req.body;
-  webhooks = webhooks.filter((webhook) => webhook.endpoint !== endpoint);
-  saveWebhooks();
-  res.send("Webhook unregistered successfully");
-});
-
-app.get("/trigger-bob", (req, res) => {
-  printBob();
-  res.send("Bob has been triggered");
-});
-
-app.get("/trigger-alice", (req, res) => {
-  printAlice();
-  res.send("Alice has been triggered");
-});
-
-// Events to invoke
-function printBob() {
-  console.log("Bob");
-  webhooks.forEach((webhook) => {
-    if (webhook.eventType === "bob") {
-      fetch(webhook.endpoint, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({msg: "Bob has been triggered"}),
-      }).catch((err) => {
-        console.log(err);
-      });
-    }
-  });
-}
-
-function printAlice() {
-  console.log("Alice");
-  webhooks.forEach((webhook) => {
-    if (webhook.eventType === "alice") {
-      fetch(webhook.endpoint, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({msg: "Alice has been triggered"}),
-      }).catch((err) => {
-        console.log(err);
-      });
-    }
-  });
-}
 
 // Function to call all registered endpoints at random intervals
 function pingEndpoints() {
@@ -96,11 +64,7 @@ function pingEndpoints() {
 // Example script to ping registered endpoints
 pingEndpoints();
 
-// Save the registered webhooks to a file
-function saveWebhooks() {
-  fs.writeFileSync("./webhooks.json", JSON.stringify(webhooks));
-}
-
+// Function for fetching a file
 function fetchFile(filePath) {
   const fileExists = fs.existsSync(filePath);
   if (!fileExists) {
