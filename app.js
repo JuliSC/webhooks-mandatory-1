@@ -3,7 +3,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import fs from "fs";
 
-const PORT = 4000;
+const PORT = process.env.PORT || 8080;
 
 // Create the express app
 const app = express();
