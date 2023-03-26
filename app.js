@@ -129,7 +129,7 @@ function saveWebhooks() {
  *       200:
  *         description: Returns confirmation msg.
  */
-router.get("/trigger-bob", (req, res) => {
+router.get("/events/trigger-bob", (req, res) => {
   printBob();
   res.send("Bob has been triggered");
 });
@@ -143,7 +143,7 @@ router.get("/trigger-bob", (req, res) => {
  *       200:
  *         description: Returns confirmation msg.
  */
-router.get("/trigger-alice", (req, res) => {
+router.get("/events/trigger-alice", (req, res) => {
   printAlice();
   res.send("Alice has been triggered");
 });
@@ -198,6 +198,8 @@ function pingEndpoints() {
     });
   }, 5000);
 }
+
+app.use("", router);
 
 // Example script to ping registered endpoints
 pingEndpoints();
